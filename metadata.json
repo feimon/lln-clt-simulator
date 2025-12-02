@@ -1,0 +1,5 @@
+{
+  "name": "Probability Explorer",
+  "description": "Interactive simulations for the Law of Large Numbers (LLN) and the Central Limit Theorem (CLT).",
+  "requestFramePermissions": []
+}
