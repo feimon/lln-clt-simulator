@@ -8,8 +8,8 @@ interface BinData {
   rangeStart: number;
   rangeEnd: number;
   name: string;
-  frequency: number; // Relative Frequency
-  normalCurve: number; // Theoretical probability
+  frequency: number; // Density
+  normalCurve: number; // PDF value
 }
 
 export const CLTSimulation: React.FC = () => {
@@ -39,7 +39,7 @@ export const CLTSimulation: React.FC = () => {
   }, []);
 
   // Calculate the appropriate Y-axis domain (ceiling) so the curve "grows" into view
-  // We calculate the theoretical max height at MAX_N
+  // We calculate the theoretical max PDF height at MAX_N
   const getYAxisDomain = useCallback((dist: DistributionType): [number, number] => {
     const sigma = getTheoreticalStdDev(dist);
     // Standard Error at MAX_N
@@ -47,14 +47,12 @@ export const CLTSimulation: React.FC = () => {
     // Peak of Normal PDF = 1 / (SE * sqrt(2*PI))
     const maxPDFHeight = 1 / (minSE * Math.sqrt(2 * Math.PI));
     
-    // The chart plots PDF * binWidth
-    const xDomain = getAxisDomain(dist);
-    const binWidth = (xDomain[1] - xDomain[0]) / BIN_COUNT;
-    const maxChartHeight = maxPDFHeight * binWidth;
+    // For Density Histogram, height corresponds directly to PDF value
+    const maxChartHeight = maxPDFHeight;
 
     // Add 15% padding
     return [0, Number((maxChartHeight * 1.15).toFixed(2))];
-  }, [getAxisDomain]);
+  }, []);
 
   // Core Data Generation Logic (Synchronous)
   const generateHistogramData = (currentN: number, M: number, dist: DistributionType) => {
@@ -95,19 +93,22 @@ export const CLTSimulation: React.FC = () => {
         }
     });
 
-    // Normalize to Relative Frequency and Calculate Theoretical Curve
+    // Normalize to Density and Calculate Theoretical Curve
     const theoreticalMean = getTheoreticalMean(dist);
     // Standard Error = sigma / sqrt(n)
     const stdDev = getTheoreticalStdDev(dist) / Math.sqrt(currentN); 
 
     bins.forEach(bin => {
-        bin.frequency = bin.frequency / M; // Relative Frequency
+        const relativeFrequency = bin.frequency / M;
+        // Density = Relative Frequency / Bin Width
+        // This ensures Area = Frequency
+        bin.frequency = relativeFrequency / binSize; 
         
         // Calculate PDF value for the center of the bin
         const x = (bin.rangeStart + bin.rangeEnd) / 2;
         const pdfValue = normalPDF(x, theoreticalMean, stdDev);
-        // Scale PDF to probability mass for the bin width: P(x) approx PDF(x) * dx
-        bin.normalCurve = pdfValue * binSize;
+        // For density histogram, curve height is simply the PDF value
+        bin.normalCurve = pdfValue;
     });
 
     return { bins, mean: calculatedMeanOfMeans };
@@ -191,12 +192,12 @@ export const CLTSimulation: React.FC = () => {
             <div className="bg-slate-800 p-5 rounded-lg border border-slate-700">
                 <div className="flex items-center gap-2 mb-4 text-slate-300">
                     <Settings2 className="w-5 h-5" />
-                    <span className="font-semibold">Configuration</span>
+                    <span className="font-semibold">配置</span>
                 </div>
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Distribution</label>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">分布类型</label>
                         <select 
                             value={distribution}
                             onChange={handleDistributionChange}
@@ -211,11 +212,11 @@ export const CLTSimulation: React.FC = () => {
 
                     <div>
                          <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-                            Sample Size (n)
+                            样本量 (n)
                          </label>
                          <div className="flex items-center justify-between bg-slate-900 rounded-md px-3 py-2 border border-slate-700">
                              <span className="text-xl font-mono text-purple-400 font-bold">{sampleSize}</span>
-                             <span className="text-xs text-slate-500">Max: {MAX_N}</span>
+                             <span className="text-xs text-slate-500">最大: {MAX_N}</span>
                          </div>
                          <input 
                             type="range" 
@@ -239,41 +240,41 @@ export const CLTSimulation: React.FC = () => {
                             setIsAnimating(!isAnimating);
                         }
                     }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all shadow-lg ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all ${
                         isAnimating 
-                        ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/20' 
-                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20'
+                        ? 'bg-amber-600 hover:bg-amber-500 text-white' 
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
                     }`}
                 >
                     {isAnimating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    {isAnimating ? "Pause" : (sampleSize >= MAX_N ? "Restart Animation" : "Animate Growth")}
+                    {isAnimating ? "暂停" : (sampleSize >= MAX_N ? "重新开始" : "开始")}
                 </button>
                 <button
                     onClick={handleReset}
                     className="flex items-center justify-center px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all border border-slate-600"
-                    title="Reset Sample Size"
+                    title="重置样本量"
                 >
                     <RotateCcw className="w-4 h-4" />
                 </button>
             </div>
 
             <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
-                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-3">Current Stats</div>
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-3">当前统计</div>
                 <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Fixed Iterations (M):</span>
+                        <span className="text-slate-400">固定模拟次数 (M):</span>
                         <span className="font-mono text-slate-200">{totalSimulations}</span>
                     </div>
                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Sample Mean:</span>
+                        <span className="text-slate-400">样本均值:</span>
                         <span className="font-mono text-emerald-400 font-bold">{meanOfMeans.toFixed(4)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Theoretical Mean:</span>
+                        <span className="text-slate-400">理论均值:</span>
                         <span className="font-mono text-blue-400">{theoreticalMean.toFixed(4)}</span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-slate-800 mt-2">
-                        <span className="text-slate-500">Std Error (<span className="font-serif italic">σ/√n</span>):</span>
+                        <span className="text-slate-500">标准误 (<span className="font-serif italic">σ/√n</span>):</span>
                         <span className="font-mono text-pink-400">
                             {(getTheoreticalStdDev(distribution) / Math.sqrt(sampleSize)).toFixed(4)}
                         </span>
@@ -283,16 +284,17 @@ export const CLTSimulation: React.FC = () => {
         </div>
 
         {/* Chart Area */}
-        <div className="lg:col-span-3 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-col min-h-[450px] order-1 lg:order-2">
+        <div className="lg:col-span-3 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-col order-1 lg:order-2">
             <h2 className="text-lg font-semibold text-slate-200 mb-2 flex items-center gap-2">
                 <BarChart3 className="text-purple-500 w-5 h-5"/> 
-                Distribution of Sample Means
+                样本均值的分布
             </h2>
             <p className="text-slate-400 text-xs mb-4">
-                Red Line = Theoretical Normal Curve. Blue Bars = Simulation Results (M={totalSimulations}).
+                红线 = 理论正态曲线。蓝色直方图 = 模拟密度 (面积=频率)。
             </p>
             
-            <div className="flex-1 w-full min-h-[350px]">
+            {/* Added explicit height h-[300px] for mobile visibility, auto height for desktop */}
+            <div className="w-full h-[300px] lg:h-[500px] lg:flex-1">
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={histogramData} barCategoryGap={0}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
@@ -301,24 +303,23 @@ export const CLTSimulation: React.FC = () => {
                             type="category" 
                             tick={{fill: '#94a3b8', fontSize: 10}} 
                             interval={Math.floor(histogramData.length / 10)}
-                            label={{ value: 'Sample Mean Value', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
+                            label={{ value: '样本均值', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
                         />
                         <YAxis 
                             domain={currentYDomain}
                             tick={{fill: '#94a3b8'}}
-                            label={{ value: 'Relative Frequency', angle: -90, position: 'insideLeft', fill: '#94a3b8', dx: 10 }}
                         />
                         <Tooltip 
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9' }}
                             itemStyle={{ color: '#f1f5f9' }}
                             formatter={(value: number, name: string) => [
                                 value.toFixed(4), 
-                                name === 'normalCurve' ? 'Theoretical Prob' : 'Frequency'
+                                name === 'normalCurve' ? '理论密度' : '密度'
                             ]}
-                            labelFormatter={(label) => `Mean ≈ ${label}`}
+                            labelFormatter={(label) => `均值 ≈ ${label}`}
                         />
                         <Legend wrapperStyle={{paddingTop: '10px'}}/>
-                        <Bar dataKey="frequency" name="Simulation" fill="#8b5cf6" opacity={0.6}>
+                        <Bar dataKey="frequency" name="模拟密度" fill="#8b5cf6" opacity={0.6}>
                             {histogramData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill="#8b5cf6" />
                             ))}
@@ -326,7 +327,7 @@ export const CLTSimulation: React.FC = () => {
                         <Line 
                             type="monotone" 
                             dataKey="normalCurve" 
-                            name="Normal Approx" 
+                            name="正态近似" 
                             stroke="#f43f5e" 
                             strokeWidth={3} 
                             dot={false}

@@ -1,5 +1,5 @@
 {
-  "name": "Probability Explorer",
-  "description": "Interactive simulations for the Law of Large Numbers (LLN) and the Central Limit Theorem (CLT).",
+  "name": "概率探索",
+  "description": "大数定律 (LLN) 与中心极限定理 (CLT) 的交互式模拟。",
   "requestFramePermissions": []
 }

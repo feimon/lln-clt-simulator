@@ -79,7 +79,7 @@ export const LLNSimulation: React.FC = () => {
         {/* Controls */}
         <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
             <div className="bg-slate-800 p-5 rounded-lg border border-slate-700">
-                <label className="block text-sm font-medium text-slate-400 mb-2">Distribution</label>
+                <label className="block text-sm font-medium text-slate-400 mb-2">分布类型</label>
                 <select 
                     value={distribution}
                     onChange={(e) => setDistribution(e.target.value as DistributionType)}
@@ -93,7 +93,7 @@ export const LLNSimulation: React.FC = () => {
             </div>
 
             <div className="bg-slate-800 p-5 rounded-lg border border-slate-700">
-                <label className="block text-sm font-medium text-slate-400 mb-2">Simulation Speed</label>
+                <label className="block text-sm font-medium text-slate-400 mb-2">模拟速度</label>
                 <input 
                     type="range" 
                     min="1" 
@@ -104,8 +104,8 @@ export const LLNSimulation: React.FC = () => {
                     className="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                 />
                 <div className="flex justify-between text-xs text-slate-500 mt-1">
-                    <span>Slow</span>
-                    <span>Fast</span>
+                    <span>慢</span>
+                    <span>快</span>
                 </div>
             </div>
 
@@ -119,7 +119,7 @@ export const LLNSimulation: React.FC = () => {
                     }`}
                 >
                     {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    {isRunning ? "Pause" : "Start"}
+                    {isRunning ? "暂停" : "开始"}
                 </button>
                 <button
                     onClick={reset}
@@ -130,30 +130,30 @@ export const LLNSimulation: React.FC = () => {
             </div>
 
             <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
-                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-2">Statistics</div>
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-2">统计数据</div>
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-slate-400">Total Trials (n):</span>
+                    <span className="text-slate-400">总试验次数 (n):</span>
                     <span className="font-mono text-white">{totalSamples}</span>
                 </div>
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-slate-400">Current Mean:</span>
+                    <span className="text-slate-400">当前均值:</span>
                     <span className={`font-mono font-bold ${Math.abs(currentMean - theoreticalMean) < 0.05 ? 'text-green-400' : 'text-yellow-400'}`}>
                         {currentMean.toFixed(4)}
                     </span>
                 </div>
                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Theoretical Exp:</span>
+                    <span className="text-slate-400">理论期望:</span>
                     <span className="font-mono text-blue-400">{theoreticalMean.toFixed(4)}</span>
                 </div>
             </div>
         </div>
 
         {/* Chart */}
-        <div className="lg:col-span-3 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-col min-h-[400px] order-1 lg:order-2">
+        <div className="lg:col-span-3 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-col order-1 lg:order-2">
             <h2 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                <Activity className="text-blue-500 w-5 h-5"/> Convergence of Sample Mean
+                <Activity className="text-blue-500 w-5 h-5"/> 样本均值的收敛
             </h2>
-            <div className="flex-1 w-full min-h-[350px]">
+            <div className="w-full h-[300px] lg:h-[500px] lg:flex-1">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
@@ -162,7 +162,7 @@ export const LLNSimulation: React.FC = () => {
                             type="number" 
                             domain={['auto', 'auto']} 
                             tick={{fill: '#94a3b8'}} 
-                            label={{ value: 'Number of Trials (n)', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
+                            label={{ value: '试验次数 (n)', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
                         />
                         <YAxis 
                             domain={[
@@ -170,7 +170,7 @@ export const LLNSimulation: React.FC = () => {
                                 distribution === DistributionType.DICE ? 6 : (distribution === DistributionType.EXPONENTIAL ? 3 : 1.2)
                             ]} 
                             tick={{fill: '#94a3b8'}}
-                            label={{ value: 'Average Value', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                            label={{ value: '平均值', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
                         />
                         <Tooltip 
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9' }}
@@ -179,7 +179,7 @@ export const LLNSimulation: React.FC = () => {
                             labelFormatter={(label) => `n = ${label}`}
                         />
                         <Legend wrapperStyle={{paddingTop: '10px'}}/>
-                        <ReferenceLine y={theoreticalMean} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: 'Expected Value', fill: '#f59e0b', position: 'insideTopRight' }} />
+                        <ReferenceLine y={theoreticalMean} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: '期望值', fill: '#f59e0b', position: 'insideTopRight' }} />
                         <Line 
                             type="monotone" 
                             dataKey="value" 
@@ -187,7 +187,7 @@ export const LLNSimulation: React.FC = () => {
                             strokeWidth={2} 
                             dot={false} 
                             isAnimationActive={false} 
-                            name="Running Mean"
+                            name="实时均值"
                         />
                     </LineChart>
                 </ResponsiveContainer>

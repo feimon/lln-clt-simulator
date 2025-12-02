@@ -1,9 +1,9 @@
 
 export enum DistributionType {
-  BERNOULLI = 'Bernoulli (Coin Flip)',
-  UNIFORM = 'Uniform (Continuous)',
-  EXPONENTIAL = 'Exponential',
-  DICE = 'Discrete Uniform (Dice)',
+  BERNOULLI = '伯努利分布 (抛硬币)',
+  UNIFORM = '均匀分布 (连续)',
+  EXPONENTIAL = '指数分布',
+  DICE = '离散均匀分布 (骰子)',
 }
 
 export interface SimulationStats {
